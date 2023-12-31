@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - modernize-and-ci
   pull_request:
     branches:
       - master

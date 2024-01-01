@@ -7,7 +7,7 @@
 ;; Maintainer: David Holm <dholmster@gmail.com>
 ;; Created: 25 Apr 2013
 ;; Keywords: convenience benchmark
-;; Version: 1.2
+;; Version: 2.0
 ;; URL: https://github.com/dholm/benchmark-init-el
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -67,7 +67,7 @@
 
 ;; Global variables
 
-(cl-defstruct benchmark-init/node
+(cl-defstruct benchmark-init-node
   "Tree node structure.
 
 Slots:
@@ -76,24 +76,48 @@ Slots:
 `duration' Duration in milliseconds.
 `children' Nodes loaded by this one."
   name type duration children)
+(define-obsolete-function-alias
+  'make-benchmark-init/node 'make-benchmark-init-node
+  "2.0")
+(define-obsolete-function-alias
+  'benchmark-init/node-name 'benchmark-init-node-name
+  "2.0")
+(define-obsolete-function-alias
+  'benchmark-init/node-type 'benchmark-init-node-type
+  "2.0")
+(define-obsolete-function-alias
+  'benchmark-init/node-duration 'benchmark-init-node-duration
+  "2.0")
+(define-obsolete-function-alias
+  'benchmark-init/node-children 'benchmark-init-node-children
+  "2.0")
 
-(defvar benchmark-init/durations-tree (make-benchmark-init/node
+(defvar benchmark-init-durations-tree (make-benchmark-init/node
                                        :name 'benchmark-init/root
                                        :type nil
                                        :duration 0
                                        :children nil)
   "Recorded durations stored in a tree.")
+(define-obsolete-variable-alias
+  'benchmark-init/durations-tree 'benchmark-init-durations-tree
+  "2.0")
 
-(defvar benchmark-init/current-node benchmark-init/durations-tree
+(defvar benchmark-init--current-node benchmark-init/durations-tree
   "Current node in durations tree.")
+(define-obsolete-variable-alias
+  'benchmark-init/current-node 'benchmark-init--current-node
+  "2.0")
 
 ;; Helpers
 
-(defun benchmark-init/time-subtract-millis (b a)
+(defun benchmark-init--time-subtract-millis (b a)
   "Calculate the number of milliseconds that have elapsed between B and A."
   (* 1000.0 (float-time (time-subtract b a))))
+(define-obsolete-function-alias
+  'benchmark-init/time-subtract-millis 'benchmark-init--time-subtract-millis
+  "2.0")
 
-(defun benchmark-init/flatten (node)
+(defun benchmark-init--flatten (node)
   "Flatten NODE into a property list."
   (let ((node-alist `((:name . ,(benchmark-init/node-name node))
                       (:type . ,(benchmark-init/node-type node))
@@ -106,28 +130,40 @@ Slots:
           (dolist (child children node-list)
             (setq node-list
                   (append (benchmark-init/flatten child) node-list))))))
+(define-obsolete-function-alias
+  'benchmark-init/flatten 'benchmark-init--flatten
+  "2.0")
 
-(defun benchmark-init/node-root-p (node)
+(defun benchmark-init--node-root-p (node)
   "True if NODE represents the tree root."
   (eq benchmark-init/durations-tree node))
+(define-obsolete-function-alias
+  'benchmark-init/node-root-p 'benchmark-init--node-root-p
+  "2.0")
 
-(defun benchmark-init/node-duration-adjusted (node)
+(defun benchmark-init-node-duration-adjusted (node)
   "Duration of NODE with child durations removed."
   (let ((duration (benchmark-init/node-duration node))
         (child-durations (benchmark-init/sum-node-durations
                           (benchmark-init/node-children node))))
     (if (benchmark-init/node-root-p node) child-durations
       (- duration child-durations))))
+(define-obsolete-function-alias
+  'benchmark-init/node-duration-adjusted 'benchmark-init-node-duration-adjusted
+  "2.0")
 
-(defun benchmark-init/sum-node-durations (nodes)
+(defun benchmark-init--sum-node-durations (nodes)
   "Return the sum of NODES durations."
   (let ((accum 0))
     (dolist (node nodes accum)
       (setq accum (+ (benchmark-init/node-duration node) accum)))))
+(define-obsolete-function-alias
+  'benchmark-init/sum-node-durations 'benchmark-init--sum-node-durations
+  "2.0")
 
 ;; Benchmark helpers
 
-(defun benchmark-init/begin-measure (name type)
+(defun benchmark-init--begin-measure (name type)
   "Begin measuring NAME of TYPE."
   (let ((parent benchmark-init/current-node)
         (node (make-benchmark-init/node :name name :type type
@@ -135,8 +171,11 @@ Slots:
                                         :children nil)))
     (setq benchmark-init/current-node node)
     parent))
+(define-obsolete-function-alias
+  'benchmark-init/begin-measure 'benchmark-init--begin-measure
+  "2.0")
 
-(defun benchmark-init/end-measure (parent should-record-p)
+(defun benchmark-init--end-measure (parent should-record-p)
   "Stop measuring and store to PARENT if SHOULD-RECORD-P."
   (let ((node benchmark-init/current-node)
         (duration (benchmark-init/time-subtract-millis
@@ -146,14 +185,19 @@ Slots:
       (setf (benchmark-init/node-duration node) duration)
       (push node (benchmark-init/node-children parent)))
     (setq benchmark-init/current-node parent)))
+(define-obsolete-function-alias
+  'benchmark-init/end-measure 'benchmark-init--end-measure
+  "2.0")
 
-(defmacro benchmark-init/measure-around (name type inner should-record-p)
+(defmacro benchmark-init--measure-around (name type inner should-record-p)
   "Save duration spent in NAME of TYPE around INNER if SHOULD-RECORD-P."
-  `(let ((parent (benchmark-init/begin-measure ,name ,type)))
+  `(let ((parent (benchmark-init--begin-measure ,name ,type)))
      (prog1
          ,inner
-       (benchmark-init/end-measure parent ,should-record-p))))
-
+       (benchmark-init--end-measure parent ,should-record-p))))
+(define-obsolete-function-alias
+  'benchmark-init/measure-around 'benchmark-init--measure-around
+  "2.0")
 ;; Benchmark injection
 
 (defadvice require
@@ -163,7 +207,7 @@ Slots:
          (already-loaded (memq feature features))
          (should-record-p (lambda ()
                             (and (not already-loaded) (memq feature features)))))
-    (benchmark-init/measure-around name 'require ad-do-it should-record-p)))
+    (benchmark-init--measure-around name 'require ad-do-it should-record-p)))
 
 (defadvice load
   (around build-load-durations (file &optional noerror nomessage nosuffix
@@ -171,27 +215,34 @@ Slots:
   "Record the time taken to load FILE."
   (let ((name (abbreviate-file-name file))
         (should-record-p (lambda () t)))
-    (benchmark-init/measure-around name 'load ad-do-it should-record-p)))
+    (benchmark-init--measure-around name 'load ad-do-it should-record-p)))
 
 ;; Benchmark control
 
-(defun benchmark-init/deactivate ()
+(defun benchmark-init-deactivate ()
   "Deactivate benchmark-init."
   (interactive)
   (ad-deactivate 'require)
   (ad-deactivate 'load))
+(define-obsolete-function-alias
+  'benchmark-init/deactivate 'benchmark-init-deactivate
+  "2.0")
 
 ;;;###autoload
-(defun benchmark-init/activate ()
+(defun benchmark-init-activate ()
   "Activate benchmark-init and start collecting data."
   (interactive)
   (ad-activate 'require)
   (ad-activate 'load))
+(define-obsolete-function-alias
+  'benchmark-init/activate 'benchmark-init-activate
+  "2.0")
 
 ;; Obsolete functions
 
-(define-obsolete-function-alias 'benchmark-init/install
-  'benchmark-init/activate "2014-03-17")
+(define-obsolete-function-alias
+  'benchmark-init/install 'benchmark-init/activate
+  "2014-03-17")
 
 (provide 'benchmark-init)
 ;;; benchmark-init.el ends here

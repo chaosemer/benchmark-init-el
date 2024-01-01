@@ -42,37 +42,52 @@
 
 ;; Faces
 
-(defgroup benchmark-init/faces nil
+(defgroup benchmark-init-faces nil
   "Faces used by benchmark-init."
   :group 'benchmark-init
   :group 'faces)
 
-(defface benchmark-init/header-face
+(defface benchmark-init-header-face
   '((t :inherit font-lock-keyword-face :bold t))
   "Face for benchmark init header."
-  :group 'benchmark-init/faces)
+  :group 'benchmark-init-faces)
+(define-obsolete-face-alias
+ 'benchmark-init/header-face 'benchmark-init-header-face
+ "2.0")
 
-(defface benchmark-init/name-face
+(defface benchmark-init-name-face
   '((t :inherit font-lock-variable-name-face))
   "Face for entry name."
-  :group 'benchmark-init/faces)
+  :group 'benchmark-init-faces)
+(define-obsolete-face-alias
+ 'benchmark-init/name-face 'benchmark-init-name-face
+ "2.0")
 
-(defface benchmark-init/type-face
+(defface benchmark-init-type-face
   '((t :inherit font-lock-type-face))
   "Face for entry type."
-  :group 'benchmark-init/faces)
+  :group 'benchmark-init-faces)
+(define-obsolete-face-alias
+ 'benchmark-init/type-face 'benchmark-init-type-face
+ "2.0")
 
-(defface benchmark-init/duration-face
+(defface benchmark-init-duration-face
   '((t :inherit font-lock-constant-face))
   "Face for entry duration."
-  :group 'benchmark-init/faces)
+  :group 'benchmark-init-faces)
+(define-obsolete-face-alias
+ 'benchmark-init/duration-face 'benchmark-init-duration-face
+ "2.0")
 
 ;; Constants
 
-(defconst benchmark-init/buffer-name "*Benchmark Init Results %s*"
+(defconst benchmark-init-buffer-name "*Benchmark Init Results %s*"
   "Name of benchmark-init list buffer.")
+(define-obsolete-variable-alias
+  'benchmark-init/buffer-name 'benchmark-init-buffer-name
+  "2.0")
 
-(defconst benchmark-init/list-format
+(defconst benchmark-init--list-format
   [("Module" 65 t)
    ("Type" 7 t)
    ("ms" 7 (lambda (a b) (< (string-to-number (aref (cadr a) 2))
@@ -82,38 +97,53 @@
                                   (string-to-number (aref (cadr b) 3))))
     :right-align t)]
   "Benchmark list format.")
+(define-obsolete-variable-alias
+  'benchmark-init/list-format 'benchmark-init--list-format
+  "2.0")
 
-(defconst benchmark-init/list-sort-key
+(defconst benchmark-init--list-sort-key
   '("ms" . t)
   "Benchmark list sort key.")
+(define-obsolete-variable-alias
+  'benchmark-init/list-sort-key 'benchmark-init--list-sort-key
+  "2.0")
 
 ;; Global variables
 
-(defvar benchmark-init/tree-mode-hook nil
+(defvar benchmark-init-tree-mode-hook nil
   "Hook run when entering the tree presentation mode.")
+(define-obsolete-variable-alias
+  'benchmark-init/tree-mode-hook 'benchmark-init-tree-mode-hook
+  "2.0")
 
-(defvar benchmark-init/tree-mode-map
+(defvar benchmark-init-tree-mode-map
   (let ((map (copy-keymap special-mode-map)))
     (set-keymap-parent map button-buffer-map)
     (define-key map "n" 'next-line)
     (define-key map "p" 'previous-line)
     map)
   "Local keymap for `benchmark-init/tree-mode' buffers.")
+(define-obsolete-variable-alias
+  'benchmark-init/tree-mode-map 'benchmark-init-tree-mode-map
+  "2.0")
 
-(defvar-local benchmark-init/display-root nil
+(defvar-local benchmark-init--display-root nil
   "Root of display in a benchmark buffer.")
 
 ;; Tabulated presentation mode
 
-(define-derived-mode benchmark-init/tabulated-mode tabulated-list-mode
+(define-derived-mode benchmark-init-tabulated-mode tabulated-list-mode
   "Benchmark Init Tabulated"
   "Mode for displaying benchmark-init results in a table."
   (setq tabulated-list-format benchmark-init/list-format)
   (setq tabulated-list-padding 2)
   (setq tabulated-list-sort-key benchmark-init/list-sort-key)
   (tabulated-list-init-header))
+(define-obsolete-function-alias
+  'benchmark-init/tabulated-mode 'benchmark-init-tabulated-mode
+  "2.0")
 
-(defun benchmark-init/list-entries ()
+(defun benchmark-init--list-entries ()
   "Generate benchmark-init list entries from durations tree."
   (let (entries)
     (mapc
@@ -124,11 +154,14 @@
              (duration-adj (round (cdr (assq :duration-adj value)))))
          (push (list name `[,name ,type ,(number-to-string duration-adj)
                                   ,(number-to-string duration)]) entries)))
-     (cdr (benchmark-init/flatten benchmark-init/display-root)))
+     (cdr (benchmark-init/flatten benchmark-init--display-root)))
     entries))
+(define-obsolete-function-alias
+  'benchmark-init/list-entries 'benchmark-init--list-entries
+  "2.0")
 
 ;;;###autoload
-(defun benchmark-init/show-durations-tabulated (&optional root)
+(defun benchmark-init-show-durations-tabulated (&optional root)
   "Show the benchmark results in a sorted table.
 ROOT is the root of the tree to show durations for.  If nil, it
 defaults to `benchmark-init/durations-tree'."
@@ -139,20 +172,26 @@ defaults to `benchmark-init/durations-tree'."
   (let ((buffer-name (format benchmark-init/buffer-name "Tabulated")))
     (with-current-buffer (get-buffer-create buffer-name)
       (benchmark-init/tabulated-mode)
-      (setq benchmark-init/display-root root)
+      (setq benchmark-init--display-root root)
       (setq tabulated-list-entries 'benchmark-init/list-entries)
       (tabulated-list-print t)
       (switch-to-buffer (current-buffer)))))
+(define-obsolete-function-alias
+  'benchmark-init/show-durations-tabulated 'benchmark-init-show-durations-tabulated
+  "2.0")
 
 ;; Tree presentation
 
-(defun benchmark-init/print-header ()
+(defun benchmark-init--print-header ()
   "Print the presentation header."
   (insert
    (propertize "Benchmark results" 'face 'benchmark-init/header-face)
    "\n\n"))
+(define-obsolete-function-alias
+  'benchmark-init/print-header 'benchmark-init--print-header
+  "2.0")
 
-(defun benchmark-init/print-node (padding node)
+(defun benchmark-init--print-node (padding node)
   "Print PADDING followed by NODE."
   (let ((name (benchmark-init/node-name node))
         (type (symbol-name (benchmark-init/node-type node)))
@@ -165,8 +204,11 @@ defaults to `benchmark-init/durations-tree'."
             " " (propertize (format "%dms" (round duration))
                             'face 'benchmark-init/duration-face)
             "]\n")))
+(define-obsolete-function-alias
+  'benchmark-init/print-node 'benchmark-init--print-node
+  "2.0")
 
-(defun benchmark-init/print-nodes (nodes padding)
+(defun benchmark-init--print-nodes (nodes padding)
   "Print NODES after PADDING."
   (cl-mapl (lambda (cons)
              (let ((x (car cons))
@@ -180,18 +222,24 @@ defaults to `benchmark-init/durations-tree'."
                  (when children
                    (benchmark-init/print-nodes children sub-padding)))))
            (reverse nodes)))
+(define-obsolete-function-alias
+  'benchmark-init/print-nodes 'benchmark-init--print-nodes
+  "2.0")
 
-(defun benchmark-init/tree-buffer-setup ()
+(defun benchmark-init--tree-buffer-setup ()
   "Configure the buffer for the durations tree."
   (let ((inhibit-read-only t))
     (erase-buffer)
     (remove-overlays)
     (benchmark-init/print-header)
-    (benchmark-init/print-nodes (list benchmark-init/display-root) ""))
+    (benchmark-init/print-nodes (list benchmark-init--display-root) ""))
   (use-local-map benchmark-init/tree-mode-map)
   (goto-char (point-min)))
+(define-obsolete-function-alias
+  'benchmark-init/tree-buffer-setup 'benchmark-init--tree-buffer-setup
+  "2.0")
 
-(defun benchmark-init/tree-mode (root)
+(defun benchmark-init-tree-mode (root)
   "Major mode for presenting durations in ROOT.
 ROOT is the root of a tree of `benchmark-init/node'."
   (kill-all-local-variables)
@@ -200,14 +248,17 @@ ROOT is the root of a tree of `benchmark-init/node'."
   (use-local-map benchmark-init/tree-mode-map)
   (setq major-mode 'benchmark-init/tree-mode)
   (setq mode-name "Benchmark Init Tree")
-  (setq benchmark-init/display-root root)
+  (setq benchmark-init--display-root root)
   (benchmark-init/tree-buffer-setup)
   (run-mode-hooks 'benchmark-init/tree-mode-hook))
+(define-obsolete-function-alias
+  'benchmark-init/tree-mode 'benchmark-init-tree-mode
+  "2.0")
 
-(put 'benchmark-init/tree-mode 'mode-class 'special)
+(put 'benchmark-init-tree-mode 'mode-class 'special)
 
 ;;;###autoload
-(defun benchmark-init/show-durations-tree (&optional root)
+(defun benchmark-init-show-durations-tree (&optional root)
   "Show durations in call-tree.
 ROOT is the root of the tree to show durations for.  If nil, it
 defaults to `benchmark-init/durations-tree'."
@@ -216,8 +267,11 @@ defaults to `benchmark-init/durations-tree'."
   (let ((buffer-name (format benchmark-init/buffer-name "Tree")))
     (switch-to-buffer (get-buffer-create buffer-name))
     (if (not (and (eq major-mode 'benchmark-init/tree-mode)
-                  (eq benchmark-init/display-root root)))
-        (benchmark-init/tree-mode root))))
+                  (eq benchmark-init--display-root root)))
+        (benchmark-init/tree-mode))))
+(define-obsolete-function-alias
+  'benchmark-init/show-durations-tree 'benchmark-init-show-durations-tree
+  "2.0")
 
 ;; Obsolete functions
 

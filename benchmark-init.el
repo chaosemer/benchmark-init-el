@@ -92,21 +92,21 @@ Slots:
   'benchmark-init/node-children 'benchmark-init-node-children
   "2.0")
 
+(define-obsolete-variable-alias
+  'benchmark-init/durations-tree 'benchmark-init-durations-tree
+  "2.0")
 (defvar benchmark-init-durations-tree (make-benchmark-init/node
                                        :name 'benchmark-init/root
                                        :type nil
                                        :duration 0
                                        :children nil)
   "Recorded durations stored in a tree.")
-(define-obsolete-variable-alias
-  'benchmark-init/durations-tree 'benchmark-init-durations-tree
-  "2.0")
 
-(defvar benchmark-init--current-node benchmark-init/durations-tree
-  "Current node in durations tree.")
 (define-obsolete-variable-alias
   'benchmark-init/current-node 'benchmark-init--current-node
   "2.0")
+(defvar benchmark-init--current-node benchmark-init/durations-tree
+  "Current node in durations tree.")
 
 ;; Helpers
 

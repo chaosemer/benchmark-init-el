@@ -81,12 +81,15 @@
 
 ;; Constants
 
-(defconst benchmark-init-buffer-name "*Benchmark Init Results %s*"
-  "Name of benchmark-init list buffer.")
 (define-obsolete-variable-alias
   'benchmark-init/buffer-name 'benchmark-init-buffer-name
   "2.0")
+(defconst benchmark-init-buffer-name "*Benchmark Init Results %s*"
+  "Name of benchmark-init list buffer.")
 
+(define-obsolete-variable-alias
+  'benchmark-init/list-format 'benchmark-init--list-format
+  "2.0")
 (defconst benchmark-init--list-format
   [("Module" 65 t)
    ("Type" 7 t)
@@ -97,25 +100,25 @@
                                   (string-to-number (aref (cadr b) 3))))
     :right-align t)]
   "Benchmark list format.")
-(define-obsolete-variable-alias
-  'benchmark-init/list-format 'benchmark-init--list-format
-  "2.0")
 
-(defconst benchmark-init--list-sort-key
-  '("ms" . t)
-  "Benchmark list sort key.")
 (define-obsolete-variable-alias
   'benchmark-init/list-sort-key 'benchmark-init--list-sort-key
   "2.0")
+(defconst benchmark-init--list-sort-key
+  '("ms" . t)
+  "Benchmark list sort key.")
 
 ;; Global variables
 
-(defvar benchmark-init-tree-mode-hook nil
-  "Hook run when entering the tree presentation mode.")
 (define-obsolete-variable-alias
   'benchmark-init/tree-mode-hook 'benchmark-init-tree-mode-hook
   "2.0")
+(defvar benchmark-init-tree-mode-hook nil
+  "Hook run when entering the tree presentation mode.")
 
+(define-obsolete-variable-alias
+  'benchmark-init/tree-mode-map 'benchmark-init-tree-mode-map
+  "2.0")
 (defvar benchmark-init-tree-mode-map
   (let ((map (copy-keymap special-mode-map)))
     (set-keymap-parent map button-buffer-map)
@@ -123,9 +126,6 @@
     (define-key map "p" 'previous-line)
     map)
   "Local keymap for `benchmark-init/tree-mode' buffers.")
-(define-obsolete-variable-alias
-  'benchmark-init/tree-mode-map 'benchmark-init-tree-mode-map
-  "2.0")
 
 (defvar-local benchmark-init--display-root nil
   "Root of display in a benchmark buffer.")

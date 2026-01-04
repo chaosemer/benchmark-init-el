@@ -65,6 +65,9 @@
   "Emacs init benchmarking."
   :group 'local)
 
+(defvar benchmark-init/backtrace-node-types nil
+  "Node types to generate backtraces for.")
+
 ;; Global variables
 
 (cl-defstruct benchmark-init/node
@@ -75,13 +78,14 @@ Slots:
 `type' Entry type, such as 'require or 'load.
 `duration' Duration in milliseconds.
 `children' Nodes loaded by this one."
-  name type duration gc-duration children)
+  name type duration gc-duration backtrace children)
 
 (defvar benchmark-init/durations-tree (make-benchmark-init/node
                                        :name 'benchmark-init/root
                                        :type nil
                                        :duration 0
                                        :gc-duration 0
+                                       :backtrace nil
                                        :children nil)
   "Recorded durations stored in a tree.")
 
@@ -101,7 +105,8 @@ Slots:
                       (:duration . ,(benchmark-init/node-duration node))
                       (:gc-duration-adj . ,(benchmark-init/node-gc-duration-adjusted node))
                       (:duration-adj . ,(benchmark-init/node-duration-adjusted
-                                         node))))
+                                         node))
+                      (:backtrace . ,(benchmark-init/node-backtrace node))))
         (children (benchmark-init/node-children node))
         (node-list))
     (cons node-alist
@@ -144,12 +149,13 @@ Slots:
 
 ;; Benchmark helpers
 
-(defun benchmark-init/begin-measure (name type)
+(defun benchmark-init/begin-measure (name type &optional backtrace)
   "Begin measuring NAME of TYPE."
   (let ((parent benchmark-init/current-node)
         (node (make-benchmark-init/node :name name :type type
                                         :duration (current-time)
                                         :gc-duration gc-elapsed
+                                        :backtrace backtrace
                                         :children nil)))
     (setq benchmark-init/current-node node)
     parent))
@@ -170,12 +176,50 @@ Slots:
       (push node (benchmark-init/node-children parent)))
     (setq benchmark-init/current-node parent)))
 
-(defmacro benchmark-init/measure-around (name type inner should-record-p)
+(defmacro benchmark-init/measure-around (name type inner should-record-p &optional backtrace)
   "Save duration spent in NAME of TYPE around INNER if SHOULD-RECORD-P."
-  `(let ((parent (benchmark-init/begin-measure ,name ,type)))
+  `(let ((parent (benchmark-init/begin-measure ,name ,type ,backtrace)))
      (prog1
          ,inner
        (benchmark-init/end-measure parent ,should-record-p))))
+
+(defun benchmark-init/relevant-backtrace (sym)
+  (let (backtrace seen)
+    (catch 'done
+      (mapbacktrace (lambda (evald func args flags)
+                      (cond
+                       ;; Wait until we get to the stack under the
+                       ;; load or require call.
+                       ((not seen)
+                        (when (eq func sym)
+                          (setq seen t)))
+
+                       ;; Above the second load or require call should
+                       ;; be in that node.
+                       ((memq func '(load require))
+                        (throw 'done nil))
+
+                       ;; Record relevant function calls.  Some
+                       ;; internal functions are not good breadcrumbs.
+                       ((and (symbolp func)
+                             (functionp func)
+                             (not (memq func '(;; Internally used by
+                                               ;; evaluator.
+                                               byte-code
+
+                                               ;; Internally added by
+                                               ;; advice.
+                                               apply
+
+                                               ;; Internally used by `load'.
+                                               load-with-code-conversion
+
+                                               ;; Advice functions.
+                                               benchmark-init/load-times-wrapper
+                                               benchmark-init/require-times-wrapper))))
+                        (push func backtrace))))))
+    backtrace))
+
 
 ;; Benchmark injection
 
@@ -188,7 +232,10 @@ Slots:
     (benchmark-init/measure-around name
 				   'require
 				   (apply orig feature args)
-				   should-record-p)))
+				   should-record-p
+                                   (and (not already-loaded)
+                                        (memq 'require benchmark-init/backtrace-node-types)
+                                        (benchmark-init/relevant-backtrace 'require)))))
 
 (advice-add 'require :around 'benchmark-init/require-times-wrapper)
 
@@ -199,7 +246,10 @@ Slots:
     (benchmark-init/measure-around name
 				   'load
 				   (apply orig file args)
-				   should-record-p)))
+				   should-record-p
+                                   (and (memq 'load benchmark-init/backtrace-node-types)
+                                        (benchmark-init/relevant-backtrace 'load)))))
+
 
 (advice-add 'load :around 'benchmark-init/load-times-wrapper)
 

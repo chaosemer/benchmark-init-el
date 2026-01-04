@@ -81,9 +81,10 @@
    ("gc ms" 7 (lambda (a b) (< (string-to-number (aref (cadr a) 3))
                                (string-to-number (aref (cadr b) 3))))
     :right-align t)
-   ("total ms" 7 (lambda (a b) (< (string-to-number (aref (cadr a) 4))
+   ("total ms" 8 (lambda (a b) (< (string-to-number (aref (cadr a) 4))
                                   (string-to-number (aref (cadr b) 4))))
-    :right-align t)]
+    :right-align t)
+   ("backtrace" 40 nil)]
   "Benchmark list format.")
 
 (defconst benchmark-init/list-sort-key
@@ -125,10 +126,13 @@
              (type (symbol-name (cdr (assq :type value))))
              (duration (round (cdr (assq :duration value))))
              (duration-adj (round (cdr (assq :duration-adj value))))
-             (gc-duration-adj (round (cdr (assq :gc-duration-adj value)))))
+             (gc-duration-adj (round (cdr (assq :gc-duration-adj value))))
+             (backtrace (cdr (assq :backtrace value))))
          (push (list name `[,name ,type ,(number-to-string duration-adj)
                                   ,(number-to-string gc-duration-adj)
-                                  ,(number-to-string duration)])
+                                  ,(number-to-string duration)
+                                  ,(if (null backtrace) ""
+                                     (prin1-to-string backtrace))])
                entries)))
      (cdr (benchmark-init/flatten benchmark-init/display-root)))
     entries))
@@ -163,7 +167,8 @@ defaults to `benchmark-init/durations-tree'."
   (let ((name (benchmark-init/node-name node))
         (type (symbol-name (benchmark-init/node-type node)))
         (duration (benchmark-init/node-duration-adjusted node))
-        (gc-duration (benchmark-init/node-gc-duration-adjusted node)))
+        (gc-duration (benchmark-init/node-gc-duration-adjusted node))
+        (backtrace (benchmark-init/node-backtrace node)))
     (insert padding "["
             (propertize (format "%s" name)
                         'face 'benchmark-init/name-face)
@@ -172,8 +177,10 @@ defaults to `benchmark-init/durations-tree'."
             " " (propertize (format "%dms gc:%dms"
                                     (round duration)
                                     (round gc-duration))
-                            'face 'benchmark-init/duration-face)
-            "]\n")))
+                            'face 'benchmark-init/duration-face))
+    (when backtrace
+      (insert " triggred by " (prin1-to-string backtrace)))
+    (insert "]\n")))
 
 (defun benchmark-init/print-nodes (nodes padding)
   "Print NODES after PADDING."

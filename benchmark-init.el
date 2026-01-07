@@ -179,37 +179,44 @@ Slots:
 
 ;; Benchmark injection
 
-(defadvice require
-  (around build-require-durations (feature &optional filename noerror) activate)
+(defun benchmark-init/require-times-wrapper (orig feature &rest args)
   "Record the time taken to require FEATURE."
   (let* ((name (symbol-name feature))
          (already-loaded (memq feature features))
          (should-record-p (lambda ()
                             (and (not already-loaded) (memq feature features)))))
-    (benchmark-init/measure-around name 'require ad-do-it should-record-p)))
+    (benchmark-init/measure-around name
+				   'require
+				   (apply orig feature args)
+				   should-record-p)))
 
-(defadvice load
-  (around build-load-durations (file &optional noerror nomessage nosuffix
-                                     must-suffix) activate)
+(advice-add 'require :around 'benchmark-init/require-times-wrapper)
+
+(defun benchmark-init/load-times-wrapper (orig file &rest args)
   "Record the time taken to load FILE."
   (let ((name (abbreviate-file-name file))
         (should-record-p (lambda () t)))
-    (benchmark-init/measure-around name 'load ad-do-it should-record-p)))
+    (benchmark-init/measure-around name
+				   'load
+				   (apply orig file args)
+				   should-record-p)))
+
+(advice-add 'load :around 'benchmark-init/load-times-wrapper)
 
 ;; Benchmark control
 
 (defun benchmark-init/deactivate ()
   "Deactivate benchmark-init."
   (interactive)
-  (ad-deactivate 'require)
-  (ad-deactivate 'load))
+  (advice-remove 'require #'benchmark-init/require-times-wrapper)
+  (advice-remove 'load #'benchmark-init/load-times-wrapper))
 
 ;;;###autoload
 (defun benchmark-init/activate ()
   "Activate benchmark-init and start collecting data."
   (interactive)
-  (ad-activate 'require)
-  (ad-activate 'load))
+  (advice-add 'require :around #'benchmark-init/require-times-wrapper)
+  (advice-add 'load :around #'benchmark-init/load-times-wrapper))
 
 ;; Obsolete functions
 

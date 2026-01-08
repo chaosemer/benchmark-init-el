@@ -9,7 +9,7 @@
 ;; Keywords: convenience benchmark
 ;; Version: 1.2
 ;; URL: https://github.com/dholm/benchmark-init-el
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "24.4"))
 
 ;; This file is not part of GNU Emacs.
 
